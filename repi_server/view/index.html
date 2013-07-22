@@ -1,0 +1,138 @@
+<html>
+<head>
+    <title>{{title}}</title>
+    <script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript">
+        $(function() {
+        var connection;
+        var log = $("#log");
+        var info_channel = '{{info_channel}}';
+        var data = $("#data");
+
+        function appendLog(msg) {
+            var d = log[0]
+            var doScroll = d.scrollTop == d.scrollHeight - d.clientHeight;
+            msg.appendTo(log)
+            if (doScroll) {
+                d.scrollTop = d.scrollHeight - d.clientHeight;
+            }
+        }
+
+        $('#ping').click(function() {
+            if (!connection) {
+                return false;
+            }
+            $('#log_items').html('');
+            var message = {
+                channel: info_channel,
+                command: "PING",
+                data: null
+            }
+            connection.send(JSON.stringify(message));
+        });
+
+        $('#package_list').click(function() {
+            if (!connection) {
+                return false;
+            }
+            $('#log_items').html('');
+            var message = {
+                channel: info_channel,
+                command: "PACKAGE_LIST",
+                data: null
+            }
+            connection.send(JSON.stringify(message));
+        })
+
+        $('#install').click(function() {
+            if (!connection) {
+                return false;
+            }
+            var message = {
+                channel: info_channel,
+                command: "INSTALL",
+                data: {
+                    "package": $('#package').val(),
+                    "version": null
+                }
+            }
+            connection.send(JSON.stringify(message));
+        })
+
+        if (window["WebSocket"]) {
+            connection = new WebSocket("ws://127.0.0.1:8888/ws");
+
+            connection.onclose = function(evt) {
+                appendLog($("<div><b>Connection closed.</b></div>"))
+            }
+            connection.onmessage = function(evt) {
+                data = JSON.parse(evt.data);
+
+                switch(data['command']) {
+                    case 'PONG':
+                        var html = $('<li><b>'+data['client']+'</b> answered</li>');
+                        html.appendTo($('#log_items'));
+                        break;
+
+                    case 'MY_PACKAGE_LIST':
+                        var packages = []
+                        for (_package in data['data']) {
+                            packages.push(_package+'=='+data['data'][_package])
+                        }
+                        var html = $('<li><b>'+data['client']+'</b>: '+packages.join(', ')+'</li>');
+                        html.appendTo($('#log_items'));
+                        break;
+
+                    case 'INSTALLING':
+                        var html = $('<li><b>'+data['client']+'</b> is installing <b>'+data['data']['package']+'</li>');
+                        html.appendTo($('#log_items'));
+                        break;
+
+                    case 'INSTALLED':
+                        var html = $('<li><b>'+data['client']+'</b> has finished installing <b>'+data['data']['package']+'</li>');
+                        html.appendTo($('#log_items'));
+                        break;
+
+
+                }
+            }
+        } else {
+            appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
+        }
+        });
+    </script>
+    <style type="text/css">
+        body {
+            background: gray;
+        }
+
+        ul {
+            margin: 0;
+            padding: 0;
+        }
+
+        li {
+            margin: 0;
+            padding: 0;
+        }
+
+        #log {
+            background: white;
+            width: 50%;
+        }
+    </style>
+</head>
+
+<body>
+    <input type="button" id="ping" value="Send global PING" />
+    <input type="button" id="package_list" value="Send global PACKAGE_LIST" />
+    <input type="button" id="install" value="Send global INSTALL" />
+    <input type="text" id="package" value="BeautifulSoup" />
+    <p>
+    <div id="log">
+        <ul id="log_items">
+
+        </ul>
+    </div>
+</body>
+</html>
