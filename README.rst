@@ -21,7 +21,7 @@ ones. To connect your virtual environments, you need to install and run
 Installation
 ------------
 
-repi-server requires a running Redis server. See`Redis' quickstart
+repi-server requires a running Redis server. See `Redis' quickstart
 <http://redis.io/topics/quickstart>`_ for installation instructions.
 repi-server is compatible with Redis clusters (which is an experimental
 feature at this point).
